@@ -1,0 +1,16 @@
+# Configuración privada
+/app/config/*.local.php
+.env
+.env.*
+
+# Archivos temporales
+*.log
+*.tmp
+
+# Archivos del editor
+.vscode/
+.idea/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

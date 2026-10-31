@@ -1,0 +1,23 @@
+
+CREATE DATABASE IF NOT EXISTS proyecto1_db
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+USE proyecto1_db;
+
+CREATE TABLE IF NOT EXISTS roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE
+) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rol_id INT NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    correo VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+    intentos_fallidos INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (rol_id) REFERENCES roles(id)
+) ENGINE=InnoDB;
