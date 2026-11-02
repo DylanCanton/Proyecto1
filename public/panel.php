@@ -51,7 +51,13 @@ if (!$usuario) {
 
         <p>
             <a href="pages/usuarios.php">Administrar usuarios</a>
+            
         </p>
+        
+        <p>
+            <a href="pages/categorias.php">Administrar categorias</a>
+        </p>
+
 
     <?php endif; ?>
 

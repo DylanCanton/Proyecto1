@@ -26,3 +26,11 @@ VALUES (
     1,
     0
 );
+
+
+INSERT INTO categorias (nombre, descripcion)
+VALUES
+('Computadoras', 'Computadoras del laboratorio'),
+('Proyectores', 'Proyectores para presentaciones'),
+('Herramientas', 'Herramientas para practicas de laboratorio');
+

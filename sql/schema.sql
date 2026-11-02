@@ -21,3 +21,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
     intentos_fallidos INT NOT NULL DEFAULT 0,
     FOREIGN KEY (rol_id) REFERENCES roles(id)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS categorias (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    descripcion VARCHAR(255),
+    eliminado TINYINT(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
+
