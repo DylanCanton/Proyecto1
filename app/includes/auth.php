@@ -23,8 +23,9 @@ function exigirRol($rol) {
 
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$usuario || $usuario["nombre"] !== $rol) {
+    if (!$usuario || !in_array($usuario["nombre"], (array) $rol, true)) {
         http_response_code(403);
         exit("Acceso denegado.");
     }
+
 }

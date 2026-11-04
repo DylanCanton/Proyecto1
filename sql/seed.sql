@@ -34,3 +34,23 @@ VALUES
 ('Proyectores', 'Proyectores para presentaciones'),
 ('Herramientas', 'Herramientas para practicas de laboratorio');
 
+
+INSERT INTO equipos (categoria_id, codigo, nombre)
+VALUES
+(
+    (SELECT id FROM categorias WHERE nombre = 'Computadoras' AND eliminado = 0),
+    'EQ001',
+    'Laptop Dell'
+),
+(
+    (SELECT id FROM categorias WHERE nombre = 'Proyectores' AND eliminado = 0),
+    'EQ002',
+    'Proyector Epson'
+),
+(
+    (SELECT id FROM categorias WHERE nombre = 'Computadoras' AND eliminado = 0),
+    'EQ003',
+    'Monitor Samsung'
+);
+
+

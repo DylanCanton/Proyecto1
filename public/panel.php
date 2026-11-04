@@ -46,41 +46,35 @@ if (!$usuario) {
 
     <h3>Panel principal</h3>
 
-    
     <?php if ($usuario["rol"] === "Administrador"): ?>
 
         <p>
             <a href="pages/usuarios.php">Administrar usuarios</a>
-            
         </p>
-        
+
         <p>
             <a href="pages/categorias.php">Administrar categorias</a>
         </p>
 
-
-    <?php endif; ?>
-
-
-    
-    <?php if ($usuario["rol"] === "Administrador"): ?>
-
         <p>
-            <a href="pages/usuarios.php">Administrar usuarios</a>
+            <a href="pages/crearEquipo.php">Registrar equipo</a>
         </p>
 
     <?php endif; ?>
 
+    <p>
+        <a href="pages/equipos.php">Consultar equipos</a>
+    </p>
 
     <p>Sistema de Gestión de Préstamo de Equipos de Laboratorio</p>
 
-    
-<form action="actions/logout.php" method="POST">
-    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+    <form action="actions/logout.php" method="POST">
 
-    <button type="submit">Cerrar sesión</button>
-</form>
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
+        <button type="submit">Cerrar sesión</button>
+
+    </form>
 
 </body>
 </html>

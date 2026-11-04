@@ -30,3 +30,14 @@ CREATE TABLE IF NOT EXISTS categorias (
     eliminado TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB;
 
+
+CREATE TABLE IF NOT EXISTS equipos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    categoria_id INT NOT NULL,
+    codigo VARCHAR(30) NOT NULL UNIQUE,
+    nombre VARCHAR(100) NOT NULL,
+    estado VARCHAR(30) NOT NULL DEFAULT 'disponible',
+    version INT NOT NULL DEFAULT 1,
+    eliminado_en DATETIME DEFAULT NULL,
+    FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+) ENGINE=InnoDB;
