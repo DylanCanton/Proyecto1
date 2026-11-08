@@ -53,4 +53,7 @@ VALUES
     'Monitor Samsung'
 );
 
+INSERT INTO configuracion (clave, valor)
+VALUES ('max_prestamos_activos', 3);
+
 

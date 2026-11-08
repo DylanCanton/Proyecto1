@@ -66,7 +66,9 @@ if (!$usuario) {
         <a href="pages/equipos.php">Consultar equipos</a>
     </p>
 
-    <p>Sistema de Gestión de Préstamo de Equipos de Laboratorio</p>
+    <p>
+        <a href="pages/crearPrestamo.php">Registrar Prestamo</a>
+    </p>
 
     <form action="actions/logout.php" method="POST">
 

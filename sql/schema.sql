@@ -41,3 +41,44 @@ CREATE TABLE IF NOT EXISTS equipos (
     eliminado_en DATETIME DEFAULT NULL,
     FOREIGN KEY (categoria_id) REFERENCES categorias(id)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS configuracion (
+    clave VARCHAR(100) PRIMARY KEY,
+    valor INT NOT NULL,
+    CHECK (valor >= 1)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS prestamos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    operador_id INT NOT NULL,
+    fecha_inicio DATETIME NOT NULL,
+    fecha_fin DATETIME NOT NULL,
+    estado ENUM(
+        'solicitado',
+        'aprobado',
+        'entregado',
+        'devuelto',
+        'cancelado'
+    ) NOT NULL DEFAULT 'solicitado',
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    FOREIGN KEY (operador_id) REFERENCES usuarios(id),
+
+    CHECK (fecha_fin > fecha_inicio)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS prestamo_detalle (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prestamo_id INT NOT NULL,
+    equipo_id INT NOT NULL,
+    fecha_devolucion DATETIME NULL,
+
+    UNIQUE (prestamo_id, equipo_id),
+
+    FOREIGN KEY (prestamo_id) REFERENCES prestamos(id),
+    FOREIGN KEY (equipo_id) REFERENCES equipos(id)
+) ENGINE=InnoDB;
