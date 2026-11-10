@@ -82,3 +82,14 @@ CREATE TABLE IF NOT EXISTS prestamo_detalle (
     FOREIGN KEY (prestamo_id) REFERENCES prestamos(id),
     FOREIGN KEY (equipo_id) REFERENCES equipos(id)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS equipo_imagenes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    equipo_id INT NOT NULL,
+    nombre_archivo VARCHAR(100) NOT NULL UNIQUE,
+    tipo_mime VARCHAR(30) NOT NULL,
+    fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (equipo_id) REFERENCES equipos(id)
+) ENGINE=InnoDB;

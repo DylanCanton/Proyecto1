@@ -14,3 +14,9 @@
 # Archivos del sistema
 .DS_Store
 Thumbs.db
+
+# Imagenes y archivos almacenados
+/app/storage/*
+!/app/storage/equipos/
+/app/storage/equipos/*
+!/app/storage/equipos/.gitkeep

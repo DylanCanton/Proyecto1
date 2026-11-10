@@ -36,6 +36,21 @@ $stmt->execute();
 
 $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+
+$sqlImagenes = "SELECT id
+                FROM equipo_imagenes
+                WHERE equipo_id = :equipo_id
+                ORDER BY id DESC";
+
+$stmtImagenes = $conexion->prepare($sqlImagenes);
+
+$stmtImagenes->execute([
+    "equipo_id" => $equipo["id"]
+]);
+
+$imagenes = $stmtImagenes->fetchAll(PDO::FETCH_ASSOC);
+
+
 ?>
 
 <!DOCTYPE html>
@@ -104,4 +119,53 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <a href="equipos.php">Volver a equipos</a>
 
 </body>
+
+
+<h3>Imagenes del equipo</h3>
+
+<form action="../actions/guardarImagenEquipo.php"
+      method="POST"
+      enctype="multipart/form-data">
+
+    <input type="hidden" name="csrf_token"
+           value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+
+    <input type="hidden" name="equipo_id"
+           value="<?php echo (int) $equipo["id"]; ?>">
+
+    <label>Seleccionar imagenes:</label>
+
+    <input type="file"
+           name="imagenes[]"
+           accept=".jpg,.jpeg,.png,.webp"
+           multiple
+           required>
+
+    <br><br>
+
+    <button type="submit">Subir imagenes</button>
+
+</form>
+
+
+<h3>Fotografias registradas</h3>
+
+<?php if (empty($imagenes)): ?>
+
+    <p>Este equipo no tiene fotografias registradas.</p>
+
+<?php else: ?>
+
+    <?php foreach ($imagenes as $imagen): ?>
+
+        <img
+            src="../actions/verImagenEquipo.php?id=<?php echo (int) $imagen["id"]; ?>"
+            alt="Fotografia del equipo"
+            width="200">
+
+    <?php endforeach; ?>
+
+<?php endif; ?>
+
+
 </html>
