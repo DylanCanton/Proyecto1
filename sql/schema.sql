@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS roles (
 ) ENGINE=InnoDB;
 
 
+
 CREATE TABLE IF NOT EXISTS usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     rol_id INT NOT NULL,
@@ -19,8 +20,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
     password_hash VARCHAR(255) NOT NULL,
     activo TINYINT(1) NOT NULL DEFAULT 1,
     intentos_fallidos INT NOT NULL DEFAULT 0,
+    bloqueado_hasta BIGINT UNSIGNED NULL DEFAULT NULL,
     FOREIGN KEY (rol_id) REFERENCES roles(id)
 ) ENGINE=InnoDB;
+
 
 
 CREATE TABLE IF NOT EXISTS categorias (
@@ -93,3 +96,15 @@ CREATE TABLE IF NOT EXISTS equipo_imagenes (
 
     FOREIGN KEY (equipo_id) REFERENCES equipos(id)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS auth_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    selector CHAR(18) NOT NULL UNIQUE,
+    validador_hash CHAR(64) NOT NULL,
+    expira_en DATETIME NOT NULL,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+

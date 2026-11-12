@@ -1,12 +1,11 @@
 
-<!DOCTYPE html>
-
 <?php
 
 require_once __DIR__ . "/../app/includes/sesion.php";
 
 ?>
 
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -27,8 +26,15 @@ require_once __DIR__ . "/../app/includes/sesion.php";
         <input type="password" name="password" required>
 
         <br><br>
-        
+
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+
+        <label>
+            <input type="checkbox" name="recordarme" value="1">
+            Recordarme
+        </label>
+
+        <br><br>
 
         <button type="submit">Ingresar</button>
 
