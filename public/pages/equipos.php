@@ -113,6 +113,51 @@ $stmt->execute();
 $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
+$recientes = [];
+$idsVistos = [];
+
+$cookieRecientes = $_COOKIE["sigel_recientes"] ?? "";
+
+if (is_string($cookieRecientes) && $cookieRecientes !== "") {
+
+    $ids = explode(",", $cookieRecientes);
+
+    $sqlRecientes = "SELECT id, codigo, nombre
+                     FROM equipos
+                     WHERE id = :id
+                     AND eliminado_en IS NULL";
+
+    $stmtRecientes = $conexion->prepare($sqlRecientes);
+
+    foreach ($ids as $idReciente) {
+
+        if (!ctype_digit($idReciente)) {
+            continue;
+        }
+
+        $idReciente = (int) $idReciente;
+
+        if ($idReciente <= 0 || in_array($idReciente, $idsVistos, true)) {
+            continue;
+        }
+
+        $idsVistos[] = $idReciente;
+
+        $stmtRecientes->execute([
+            "id" => $idReciente
+        ]);
+
+        $equipoReciente = $stmtRecientes->fetch(PDO::FETCH_ASSOC);
+
+        if ($equipoReciente) {
+            $recientes[] = $equipoReciente;
+        }
+
+        if (count($recientes) >= 5) {
+            break;
+        }
+    }
+}
 
 ?>
 
@@ -127,6 +172,30 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <h2>Listado de equipos</h2>
 
     <a href="../panel.php">Volver al panel</a>
+
+
+<h3>Ultimos equipos consultados</h3>
+
+<?php if (empty($recientes)): ?>
+
+    <p>Todavia no has consultado equipos.</p>
+
+<?php else: ?>
+
+    <ul>
+        <?php foreach ($recientes as $reciente): ?>
+
+            <li>
+                <a href="verEquipo.php?id=<?php echo (int) $reciente["id"]; ?>">
+                    <?php echo htmlspecialchars($reciente["codigo"] . " - " . $reciente["nombre"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>
+                </a>
+            </li>
+
+        <?php endforeach; ?>
+    </ul>
+
+<?php endif; ?>
+
 
     
 <br><br>
@@ -162,10 +231,12 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <th>Nombre</th>
             <th>Categoria</th>
             <th>Estado</th>
-            
+            <th>Consultar</th>
+
             <?php if ($esAdministrador): ?>
                 <th>Acciones</th>
             <?php endif; ?>
+
 
         </tr>
 
@@ -177,6 +248,13 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <td><?php echo htmlspecialchars($equipo["nombre"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></td>
             <td><?php echo htmlspecialchars($equipo["categoria"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></td>
             <td><?php echo htmlspecialchars($equipo["estado"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></td>
+
+            <td>
+                <a href="verEquipo.php?id=<?php echo (int) $equipo["id"]; ?>">
+                    Ver
+                </a>
+            </td>
+
         
         <?php if ($esAdministrador): ?>
             <td>
