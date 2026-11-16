@@ -6,14 +6,100 @@ require_once __DIR__ . "/../../app/includes/auth.php";
 
 exigirRol("Administrador");
 
-$sql = "SELECT usuarios.id, usuarios.nombre,
-        usuarios.correo, usuarios.activo,
-        roles.nombre AS rol
+
+$buscar = $_GET["buscar"] ?? "";
+
+if (!is_string($buscar)) {
+    $buscar = "";
+}
+
+$buscar = trim($buscar);
+
+if (strlen($buscar) > 100) {
+    $buscar = "";
+}
+
+$texto = "%" . $buscar . "%";
+
+
+$opciones = [5, 10, 20];
+
+$porPagina = 10;
+
+if (isset($_GET["porPagina"])) {
+
+    $valor = filter_input(INPUT_GET, "porPagina", FILTER_VALIDATE_INT);
+
+    if ($valor !== false && $valor !== null && in_array($valor, $opciones, true)) {
+
+        $porPagina = $valor;
+
+        setcookie("sigel_usuarios", (string) $porPagina, [
+            "expires" => time() + 60 * 60 * 24 * 30,
+            "path" => "/",
+            "secure" => !empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off",
+            "httponly" => true,
+            "samesite" => "Lax"
+        ]);
+    }
+
+} elseif (isset($_COOKIE["sigel_usuarios"]) && is_string($_COOKIE["sigel_usuarios"])) {
+
+    $valor = filter_var($_COOKIE["sigel_usuarios"], FILTER_VALIDATE_INT);
+
+    if ($valor !== false && in_array($valor, $opciones, true)) {
+        $porPagina = $valor;
+    }
+}
+
+
+$sql = "SELECT COUNT(*)
         FROM usuarios
-        INNER JOIN roles ON usuarios.rol_id = roles.id
-        ORDER BY usuarios.id DESC";
+        WHERE nombre LIKE :nombre
+        OR correo LIKE :correo";
 
 $stmt = $conexion->prepare($sql);
+
+$stmt->execute([
+    "nombre" => $texto,
+    "correo" => $texto
+]);
+
+$totalRegistros = (int) $stmt->fetchColumn();
+
+$totalPaginas = max(1, (int) ceil($totalRegistros / $porPagina));
+
+
+$pagina = filter_input(INPUT_GET, "pagina", FILTER_VALIDATE_INT);
+
+if (!$pagina || $pagina < 1) {
+    $pagina = 1;
+}
+
+if ($pagina > $totalPaginas) {
+    $pagina = $totalPaginas;
+}
+
+$inicio = ($pagina - 1) * $porPagina;
+
+
+$sql = "SELECT usuarios.id, usuarios.nombre,
+               usuarios.correo, usuarios.activo,
+               roles.nombre AS rol
+        FROM usuarios
+        INNER JOIN roles ON usuarios.rol_id = roles.id
+        WHERE usuarios.nombre LIKE :nombre
+        OR usuarios.correo LIKE :correo
+        ORDER BY usuarios.id DESC
+        LIMIT :limite OFFSET :inicio";
+
+$stmt = $conexion->prepare($sql);
+
+$stmt->bindValue(":nombre", $texto, PDO::PARAM_STR);
+$stmt->bindValue(":correo", $texto, PDO::PARAM_STR);
+$stmt->bindValue(":limite", $porPagina, PDO::PARAM_INT);
+$stmt->bindValue(":inicio", $inicio, PDO::PARAM_INT);
+
 $stmt->execute();
 
 $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -35,6 +121,28 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <br><br>
 
     <a href="crearUsuario.php">Registrar usuario</a>
+
+    <br><br>
+
+    <form action="usuarios.php" method="GET">
+
+        <input type="text" name="buscar" maxlength="100"
+            value="<?php echo htmlspecialchars($buscar, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>"
+            placeholder="Buscar por nombre o correo">
+
+        <label>Registros por pagina:</label>
+
+        <select name="porPagina">
+            <option value="5" <?php if ($porPagina == 5) echo "selected"; ?>>5</option>
+            <option value="10" <?php if ($porPagina == 10) echo "selected"; ?>>10</option>
+            <option value="20" <?php if ($porPagina == 20) echo "selected"; ?>>20</option>
+        </select>
+
+        <button type="submit">Buscar</button>
+
+        <a href="usuarios.php">Mostrar todos</a>
+
+    </form>
 
     <br><br>
 
@@ -63,8 +171,7 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <td>
                     <?php echo $usuario["activo"] == 1 ? "Activo" : "Inactivo"; ?>
                 </td>
-              
-                
+
                 <td>
                     <a href="editarUsuario.php?id=<?php echo (int) $usuario["id"]; ?>">Editar</a>
 
@@ -85,12 +192,31 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php endif; ?>
                 </td>
 
-
             </tr>
 
         <?php endforeach; ?>
 
     </table>
+
+    <br>
+
+    <?php if ($totalPaginas > 1): ?>
+
+        <p>Pagina <?php echo $pagina; ?> de <?php echo $totalPaginas; ?></p>
+
+        <?php if ($pagina > 1): ?>
+            <a href="usuarios.php?pagina=<?php echo $pagina - 1; ?>&amp;buscar=<?php echo urlencode($buscar); ?>&amp;porPagina=<?php echo $porPagina; ?>">
+                Anterior
+            </a>
+        <?php endif; ?>
+
+        <?php if ($pagina < $totalPaginas): ?>
+            <a href="usuarios.php?pagina=<?php echo $pagina + 1; ?>&amp;buscar=<?php echo urlencode($buscar); ?>&amp;porPagina=<?php echo $porPagina; ?>">
+                Siguiente
+            </a>
+        <?php endif; ?>
+
+    <?php endif; ?>
 
 </body>
 </html>
