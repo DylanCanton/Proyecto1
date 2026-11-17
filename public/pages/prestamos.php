@@ -1,10 +1,13 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al operador
 exigirRol("Operador");
 
+// Consultar los prestamos registrados
 $sql = "SELECT
             prestamos.id,
             usuarios.nombre AS usuario,
@@ -36,7 +39,7 @@ $stmt->execute();
 
 $prestamos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
+// Definir los cambios de estado permitidos
 $opcionesEstados = [
     "solicitado" => ["aprobado", "cancelado"],
     "aprobado" => ["entregado", "cancelado"],
@@ -52,6 +55,7 @@ $opcionesEstados = [
 <head>
     <meta charset="UTF-8">
     <title>Listado de prestamos - SIGEL</title>
+    <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
 
@@ -65,12 +69,14 @@ $opcionesEstados = [
 
     <br><br>
 
+    <!-- Comprobar si existen prestamos -->
     <?php if (empty($prestamos)): ?>
 
         <p>No hay prestamos registrados.</p>
 
     <?php else: ?>
 
+        <!-- Tabla de prestamos -->
         <table border="1" cellpadding="10">
 
             <tr>
@@ -83,11 +89,12 @@ $opcionesEstados = [
                 <th>Acciones</th>
             </tr>
 
+            <!-- Mostrar los prestamos registrados -->
             <?php foreach ($prestamos as $prestamo): ?>
 
                 <tr>
                     <td><?php echo (int) $prestamo["id"]; ?></td>
-                    
+
                     <td>
                         <?php echo htmlspecialchars($prestamo["usuario"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>
                     </td>
@@ -107,42 +114,49 @@ $opcionesEstados = [
                     <td>
                         <?php echo htmlspecialchars($prestamo["estado"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>
                     </td>
-                    
-<td>
-    <?php $opciones = $opcionesEstados[$prestamo["estado"]] ?? []; ?>
 
-    <?php if (!empty($opciones)): ?>
+                    <td>
 
-        <form action="../actions/cambiarEstadoPrestamo.php" method="POST">
+                        <!-- Obtener los estados disponibles -->
+                        <?php $opciones = $opcionesEstados[$prestamo["estado"]] ?? []; ?>
 
-            <input type="hidden" name="csrf_token"
-                   value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+                        <?php if (!empty($opciones)): ?>
 
-            <input type="hidden" name="prestamo_id"
-                   value="<?php echo (int) $prestamo["id"]; ?>">
+                            <!-- Formulario para cambiar el estado -->
+                            <form action="../actions/cambiarEstadoPrestamo.php" method="POST">
 
-            <select name="nuevo_estado" required>
+                                <!-- Token de seguridad CSRF -->
+                                <input type="hidden" name="csrf_token"
+                                       value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
-                <?php foreach ($opciones as $estado): ?>
+                                <!-- ID del prestamo -->
+                                <input type="hidden" name="prestamo_id"
+                                       value="<?php echo (int) $prestamo["id"]; ?>">
 
-                    <option value="<?php echo htmlspecialchars($estado, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
-                        <?php echo htmlspecialchars(ucfirst($estado), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>
-                    </option>
+                                <select name="nuevo_estado" required>
 
-                <?php endforeach; ?>
+                                    <!-- Mostrar los estados permitidos -->
+                                    <?php foreach ($opciones as $estado): ?>
 
-            </select>
+                                        <option value="<?php echo htmlspecialchars($estado, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+                                            <?php echo htmlspecialchars(ucfirst($estado), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>
+                                        </option>
 
-            <button type="submit">Cambiar estado</button>
+                                    <?php endforeach; ?>
 
-        </form>
+                                </select>
 
-    <?php else: ?>
+                                <button type="submit">Cambiar estado</button>
 
-        Sin acciones disponibles
+                            </form>
 
-    <?php endif; ?>
-</td>
+                        <?php else: ?>
+
+                            Sin acciones disponibles
+
+                        <?php endif; ?>
+
+                    </td>
 
                 </tr>
 

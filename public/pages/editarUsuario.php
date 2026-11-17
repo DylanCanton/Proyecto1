@@ -1,10 +1,13 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al administrador
 exigirRol("Administrador");
 
+// Obtener y validar el ID del usuario
 $id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
 
 if (!$id || $id <= 0) {
@@ -12,6 +15,7 @@ if (!$id || $id <= 0) {
     exit;
 }
 
+// Buscar los datos del usuario
 $sql = "SELECT id, nombre, correo, rol_id
         FROM usuarios
         WHERE id = :id";
@@ -21,11 +25,13 @@ $stmt->execute(["id" => $id]);
 
 $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// Verificar que el usuario exista
 if (!$usuario) {
     header("Location: usuarios.php");
     exit;
 }
 
+// Consultar los roles disponibles
 $sql = "SELECT id, nombre FROM roles ORDER BY nombre";
 
 $stmt = $conexion->prepare($sql);
@@ -40,6 +46,7 @@ $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Editar usuario - SIGEL</title>
+    <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
 
@@ -49,11 +56,14 @@ $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <br><br>
 
+    <!-- Formulario para editar usuario -->
     <form action="../actions/actualizarUsuario.php" method="POST">
 
+        <!-- Token de seguridad -->
         <input type="hidden" name="csrf_token"
                value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
+        <!-- ID del usuario que se va a editar -->
         <input type="hidden" name="id"
                value="<?php echo (int) $usuario["id"]; ?>">
 
@@ -74,6 +84,7 @@ $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <label>Rol:</label>
         <select name="rol_id" required>
 
+            <!-- Mostrar los roles de MySQL -->
             <?php foreach ($roles as $rol): ?>
 
                 <option value="<?php echo (int) $rol["id"]; ?>"

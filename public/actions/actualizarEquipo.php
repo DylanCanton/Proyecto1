@@ -1,15 +1,19 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al administrador
 exigirRol("Administrador");
 
+// Verificar el metodo POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: ../pages/equipos.php");
     exit;
 }
 
+// Validar el token CSRF
 $token = $_POST["csrf_token"] ?? "";
 
 if (!is_string($token) || !hash_equals($_SESSION["csrf_token"] ?? "", $token)) {
@@ -17,20 +21,24 @@ if (!is_string($token) || !hash_equals($_SESSION["csrf_token"] ?? "", $token)) {
     exit("Solicitud no valida.");
 }
 
+// Recibir los datos del formulario
 $id = filter_input(INPUT_POST, "id", FILTER_VALIDATE_INT);
 $categoria_id = filter_input(INPUT_POST, "categoria_id", FILTER_VALIDATE_INT);
 $codigo = $_POST["codigo"] ?? "";
 $nombre = $_POST["nombre"] ?? "";
 $estado = $_POST["estado"] ?? "";
 
+// Validar el ID y los tipos de datos
 if (!$id || $id <= 0 || !is_string($codigo) || !is_string($nombre) || !is_string($estado)) {
     header("Location: ../pages/equipos.php");
     exit;
 }
 
+// Eliminar espacios innecesarios
 $codigo = trim($codigo);
 $nombre = trim($nombre);
 
+// Validar los datos del equipo
 if (
     !preg_match('/^[A-Za-z0-9-]{1,30}$/', $codigo) ||
     $nombre === "" ||
@@ -45,6 +53,7 @@ if (
 
 try {
 
+    // Verificar que la categoria exista y no este eliminada
     $sql = "SELECT id FROM categorias
             WHERE id = :id AND eliminado = 0";
 
@@ -56,6 +65,7 @@ try {
         exit;
     }
 
+    // Actualizar los datos del equipo
     $sql = "UPDATE equipos
             SET categoria_id = :categoria_id,
                 codigo = :codigo,
@@ -74,11 +84,13 @@ try {
         "id" => $id
     ]);
 
+    // Regresar a la lista de equipos
     header("Location: ../pages/equipos.php");
     exit;
 
 } catch (PDOException $e) {
 
+    // Registrar el error en el servidor
     error_log($e->getMessage());
 
     header("Location: ../pages/editarEquipo.php?id=$id&error=1");

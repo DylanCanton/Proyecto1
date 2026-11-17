@@ -1,15 +1,19 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al administrador
 exigirRol("Administrador");
 
+// Verificar el metodo POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: ../pages/equipos.php");
     exit;
 }
 
+// Validar el token CSRF
 $token = $_POST["csrf_token"] ?? "";
 
 if (
@@ -22,9 +26,11 @@ if (
     exit("Solicitud no valida.");
 }
 
+// Recibir el ID del equipo y las imagenes
 $equipo_id = filter_input(INPUT_POST, "equipo_id", FILTER_VALIDATE_INT);
 $archivos = $_FILES["imagenes"] ?? null;
 
+// Validar los datos recibidos
 if (
     !$equipo_id ||
     $equipo_id <= 0 ||
@@ -40,6 +46,7 @@ if (
     exit;
 }
 
+// Permitir entre 1 y 5 imagenes por subida
 $total = count($archivos["name"]);
 
 if (
@@ -53,31 +60,38 @@ if (
     exit;
 }
 
+// Definir los formatos permitidos
 $tiposPermitidos = [
     "image/jpeg" => "jpg",
     "image/png" => "png",
     "image/webp" => "webp"
 ];
 
+// Establecer un tamaño maximo de 5 MB
 $tamanoMaximo = 5 * 1024 * 1024;
 
+// Definir la carpeta donde se guardan las imagenes
 $carpeta = __DIR__ . "/../../app/storage/equipos";
 
+// Verificar que la carpeta permita guardar archivos
 if (!is_dir($carpeta) || !is_writable($carpeta)) {
     error_log("La carpeta de imagenes no existe o no permite escritura.");
     header("Location: ../pages/editarEquipo.php?id=" . $equipo_id . "&error=carpeta");
     exit;
 }
 
+// Preparar la validacion de los archivos
 $detector = new finfo(FILEINFO_MIME_TYPE);
 $imagenesValidadas = [];
 
 foreach ($archivos["name"] as $i => $nombreOriginal) {
 
+    // Obtener los datos de cada imagen
     $error = $archivos["error"][$i] ?? UPLOAD_ERR_NO_FILE;
     $temporal = $archivos["tmp_name"][$i] ?? "";
     $tamano = $archivos["size"][$i] ?? 0;
 
+    // Comprobar que la imagen se haya recibido correctamente
     if (
         $error !== UPLOAD_ERR_OK ||
         !is_string($temporal) ||
@@ -90,6 +104,7 @@ foreach ($archivos["name"] as $i => $nombreOriginal) {
         exit;
     }
 
+    // Comprobar el formato real del archivo
     $mime = $detector->file($temporal);
 
     if (!is_string($mime) || !isset($tiposPermitidos[$mime])) {
@@ -97,11 +112,13 @@ foreach ($archivos["name"] as $i => $nombreOriginal) {
         exit;
     }
 
+    // Verificar que el archivo sea una imagen
     if (getimagesize($temporal) === false) {
         header("Location: ../pages/editarEquipo.php?id=" . $equipo_id . "&error=formato");
         exit;
     }
 
+    // Guardar las imagenes que pasaron la validacion
     $imagenesValidadas[] = [
         "temporal" => $temporal,
         "mime" => $mime
@@ -112,8 +129,10 @@ $archivosGuardados = [];
 
 try {
 
+    // Iniciar una transaccion en MySQL
     $conexion->beginTransaction();
 
+    // Verificar que el equipo exista
     $sql = "SELECT id
             FROM equipos
             WHERE id = :id
@@ -130,6 +149,7 @@ try {
         throw new RuntimeException("El equipo no existe.");
     }
 
+    // Preparar el registro de las imagenes
     $sql = "INSERT INTO equipo_imagenes
             (equipo_id, nombre_archivo, tipo_mime)
             VALUES (:equipo_id, :nombre_archivo, :tipo_mime)";
@@ -140,16 +160,19 @@ try {
 
         $extension = $tiposPermitidos[$imagen["mime"]];
 
+        // Generar un nombre unico para la imagen
         $nombreNuevo = bin2hex(random_bytes(16)) . "." . $extension;
 
         $ruta = $carpeta . DIRECTORY_SEPARATOR . $nombreNuevo;
 
+        // Mover la imagen a la carpeta del servidor
         if (!move_uploaded_file($imagen["temporal"], $ruta)) {
             throw new RuntimeException("No fue posible guardar la imagen.");
         }
 
         $archivosGuardados[] = $ruta;
 
+        // Registrar la imagen en MySQL
         $stmt->execute([
             "equipo_id" => $equipo_id,
             "nombre_archivo" => $nombreNuevo,
@@ -157,6 +180,7 @@ try {
         ]);
     }
 
+    // Confirmar los cambios en MySQL
     $conexion->commit();
 
     header("Location: ../pages/editarEquipo.php?id=" . $equipo_id . "&imagenes=ok");
@@ -164,16 +188,19 @@ try {
 
 } catch (Throwable $e) {
 
+    // Deshacer la transaccion si ocurre un error
     if ($conexion->inTransaction()) {
         $conexion->rollBack();
     }
 
+    // Eliminar los archivos guardados si falla el proceso
     foreach ($archivosGuardados as $ruta) {
         if (is_file($ruta)) {
             unlink($ruta);
         }
     }
 
+    // Registrar el error en el servidor
     error_log($e->getMessage());
 
     header("Location: ../pages/editarEquipo.php?id=" . $equipo_id . "&error=subida");

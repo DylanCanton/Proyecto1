@@ -1,10 +1,13 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al administrador
 exigirRol("Administrador");
 
+// Obtener y validar el ID del equipo
 $id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
 
 if (!$id || $id <= 0) {
@@ -12,6 +15,7 @@ if (!$id || $id <= 0) {
     exit;
 }
 
+// Buscar los datos del equipo
 $sql = "SELECT id, categoria_id, codigo, nombre, estado
         FROM equipos
         WHERE id = :id AND eliminado_en IS NULL";
@@ -21,11 +25,13 @@ $stmt->execute(["id" => $id]);
 
 $equipo = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// Verificar que el equipo exista
 if (!$equipo) {
     header("Location: equipos.php");
     exit;
 }
 
+// Consultar las categorias disponibles
 $sql = "SELECT id, nombre
         FROM categorias
         WHERE eliminado = 0
@@ -36,7 +42,7 @@ $stmt->execute();
 
 $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
+// Consultar las imagenes del equipo
 $sqlImagenes = "SELECT id
                 FROM equipo_imagenes
                 WHERE equipo_id = :equipo_id
@@ -50,7 +56,6 @@ $stmtImagenes->execute([
 
 $imagenes = $stmtImagenes->fetchAll(PDO::FETCH_ASSOC);
 
-
 ?>
 
 <!DOCTYPE html>
@@ -58,20 +63,24 @@ $imagenes = $stmtImagenes->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Editar Equipo - SIGEL</title>
+    <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
 
     <h2>Editar equipo</h2>
 
+    <!-- Mostrar un mensaje si ocurre un error -->
     <?php if (isset($_GET["error"])): ?>
         <p>No se pudo actualizar el equipo. Verifique los datos.</p>
     <?php endif; ?>
 
-
+    <!-- Formulario para editar el equipo -->
     <form action="../actions/actualizarEquipo.php" method="POST">
 
+        <!-- Token de seguridad CSRF -->
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
+        <!-- ID del equipo que se va a editar -->
         <input type="hidden" name="id" value="<?php echo (int) $equipo["id"]; ?>">
 
         <label>Codigo:</label>
@@ -87,6 +96,7 @@ $imagenes = $stmtImagenes->fetchAll(PDO::FETCH_ASSOC);
         <label>Categoria:</label>
         <select name="categoria_id" required>
 
+            <!-- Mostrar las categorias disponibles -->
             <?php foreach ($categorias as $categoria): ?>
 
                 <option value="<?php echo (int) $categoria["id"]; ?>"
@@ -102,6 +112,7 @@ $imagenes = $stmtImagenes->fetchAll(PDO::FETCH_ASSOC);
 
         <br><br>
 
+        <!-- Selecciona el estado del equipo -->
         <label>Estado:</label>
         <select name="estado" required>
             <option value="disponible" <?php if ($equipo["estado"] === "disponible") echo "selected"; ?>>Disponible</option>
@@ -120,21 +131,24 @@ $imagenes = $stmtImagenes->fetchAll(PDO::FETCH_ASSOC);
 
 </body>
 
-
+<!-- Formulario para subir fotografias -->
 <h3>Imagenes del equipo</h3>
 
 <form action="../actions/guardarImagenEquipo.php"
       method="POST"
       enctype="multipart/form-data">
 
+    <!-- Token de seguridad CSRF -->
     <input type="hidden" name="csrf_token"
            value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
+    <!-- ID del equipo -->
     <input type="hidden" name="equipo_id"
            value="<?php echo (int) $equipo["id"]; ?>">
 
     <label>Seleccionar imagenes:</label>
 
+    <!-- Selecciona varias imagenes -->
     <input type="file"
            name="imagenes[]"
            accept=".jpg,.jpeg,.png,.webp"
@@ -147,7 +161,7 @@ $imagenes = $stmtImagenes->fetchAll(PDO::FETCH_ASSOC);
 
 </form>
 
-
+<!-- Mostrar las fotografias registradas -->
 <h3>Fotografias registradas</h3>
 
 <?php if (empty($imagenes)): ?>
@@ -166,6 +180,5 @@ $imagenes = $stmtImagenes->fetchAll(PDO::FETCH_ASSOC);
     <?php endforeach; ?>
 
 <?php endif; ?>
-
 
 </html>

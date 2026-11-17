@@ -1,14 +1,17 @@
 
 <?php
 
+// Carga la sesion y la conexion
 require_once __DIR__ . "/../app/includes/sesion.php";
 require_once __DIR__ . "/../app/config/conexion.php";
 
+// Verifica que el usuario inicio sesion
 if (!isset($_SESSION["usuario_id"])) {
     header("Location: index.php");
     exit;
 }
 
+// Consulta los datos y el rol del usuario
 $sql = "SELECT usuarios.nombre, roles.nombre AS rol
         FROM usuarios
         INNER JOIN roles ON usuarios.rol_id = roles.id
@@ -19,6 +22,7 @@ $stmt->execute(["id" => $_SESSION["usuario_id"]]);
 
 $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// Verificar que el usuario exista y este activo
 if (!$usuario) {
     header("Location: index.php");
     exit;
@@ -31,6 +35,7 @@ if (!$usuario) {
 <head>
     <meta charset="UTF-8">
     <title>Panel SIGEL</title>
+    <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
 
@@ -46,42 +51,50 @@ if (!$usuario) {
 
     <h3>Panel principal</h3>
 
-    <?php if ($usuario["rol"] === "Administrador"): ?>
+    <div class="menu">
 
+        <!-- Opciones del administrador -->
+        <?php if ($usuario["rol"] === "Administrador"): ?>
+
+            <p>
+                <a href="pages/usuarios.php">Administrar usuarios</a>
+            </p>
+
+            <p>
+                <a href="pages/categorias.php">Administrar categorias</a>
+            </p>
+
+            <p>
+                <a href="pages/crearEquipo.php">Registrar equipo</a>
+            </p>
+
+            <p>
+                <a href="pages/reporteEquipos.php">Reportes de equipos</a>
+            </p>
+
+        <?php endif; ?>
+
+        <!-- Opcion para ambos roles -->
         <p>
-            <a href="pages/usuarios.php">Administrar usuarios</a>
+            <a href="pages/equipos.php">Consultar equipos</a>
         </p>
 
-        <p>
-            <a href="pages/categorias.php">Administrar categorias</a>
-        </p>
+        <!-- Opciones del operador -->
+        <?php if ($usuario["rol"] === "Operador"): ?>
 
-        <p>
-            <a href="pages/crearEquipo.php">Registrar equipo</a>
-        </p>
+            <p>
+                <a href="pages/crearPrestamo.php">Registrar prestamo</a>
+            </p>
 
-        <p>
-            <a href="pages/reporteEquipos.php">Reportes de equipos</a>
-        </p>
+            <p>
+                <a href="pages/prestamos.php">Consultar prestamos</a>
+            </p>
 
-    <?php endif; ?>
+        <?php endif; ?>
 
-    <p>
-        <a href="pages/equipos.php">Consultar equipos</a>
-    </p>
+    </div>
 
-    <?php if ($usuario["rol"] === "Operador"): ?>
-
-        <p>
-            <a href="pages/crearPrestamo.php">Registrar prestamo</a>
-        </p>
-
-        <p>
-            <a href="pages/prestamos.php">Consultar prestamos</a>
-        </p>
-
-    <?php endif; ?>
-
+    <!-- Cerrar la sesion -->
     <form action="actions/logout.php" method="POST">
 
         <input type="hidden" name="csrf_token"

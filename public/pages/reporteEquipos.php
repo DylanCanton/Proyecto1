@@ -1,27 +1,34 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al administrador
 exigirRol("Administrador");
 
+// Obtener las fechas del formulario
 $fechaInicio = $_GET["inicio"] ?? "";
 $fechaFin = $_GET["fin"] ?? "";
 
 $resultados = [];
 $error = "";
 
+// Verificar si se enviaron las fechas
 if (isset($_GET["inicio"], $_GET["fin"])) {
 
+    // Comprobar los tipos de datos
     if (!is_string($fechaInicio) || !is_string($fechaFin)) {
         $error = "Las fechas no son validas.";
         $fechaInicio = "";
         $fechaFin = "";
     } else {
 
+        // Convertir las fechas recibidas
         $inicio = DateTimeImmutable::createFromFormat("!Y-m-d", $fechaInicio);
         $fin = DateTimeImmutable::createFromFormat("!Y-m-d", $fechaFin);
 
+        // Validar el rango de fechas
         if (
             !$inicio ||
             !$fin ||
@@ -32,6 +39,7 @@ if (isset($_GET["inicio"], $_GET["fin"])) {
             $error = "Seleccione un rango de fechas valido.";
         } else {
 
+            // Consultar los equipos mas prestados
             $sql = "SELECT
                         equipos.codigo,
                         equipos.nombre,
@@ -54,6 +62,7 @@ if (isset($_GET["inicio"], $_GET["fin"])) {
                 "fin" => $fechaFin
             ]);
 
+            // Obtener los resultados
             $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
     }
@@ -66,6 +75,7 @@ if (isset($_GET["inicio"], $_GET["fin"])) {
 <head>
     <meta charset="UTF-8">
     <title>Reporte de equipos - SIGEL</title>
+    <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
 
@@ -75,6 +85,7 @@ if (isset($_GET["inicio"], $_GET["fin"])) {
 
     <br><br>
 
+    <!-- Formulario para consultar el reporte -->
     <form action="reporteEquipos.php" method="GET">
 
         <label>Fecha inicial:</label>
@@ -95,6 +106,7 @@ if (isset($_GET["inicio"], $_GET["fin"])) {
 
     </form>
 
+    <!-- Mostrar errores de validacion -->
     <?php if ($error !== ""): ?>
 
         <p><?php echo htmlspecialchars($error, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></p>
@@ -103,27 +115,29 @@ if (isset($_GET["inicio"], $_GET["fin"])) {
 
         <h3>Resultados del reporte</h3>
 
+        <!-- Comprobar si existen resultados -->
         <?php if (empty($resultados)): ?>
 
             <p>No se encontraron prestamos en ese rango de fechas.</p>
 
         <?php else: ?>
 
+            <!-- Formulario para exportar el reporte -->
+            <form action="../actions/exportarReporteCSV.php" method="GET">
 
-        <form action="../actions/exportarReporteCSV.php" method="GET">
+                <input type="hidden" name="inicio"
+                    value="<?php echo htmlspecialchars($fechaInicio, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
-            <input type="hidden" name="inicio"
-                value="<?php echo htmlspecialchars($fechaInicio, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+                <input type="hidden" name="fin"
+                    value="<?php echo htmlspecialchars($fechaFin, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
-            <input type="hidden" name="fin"
-                value="<?php echo htmlspecialchars($fechaFin, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+                <button type="submit">Exportar CSV</button>
 
-            <button type="submit">Exportar CSV</button>
+            </form>
 
-        </form>
+            <br>
 
-        <br>
-
+            <!-- Tabla de resultados -->
             <table border="1" cellpadding="10">
 
                 <tr>
@@ -132,6 +146,7 @@ if (isset($_GET["inicio"], $_GET["fin"])) {
                     <th>Total de prestamos</th>
                 </tr>
 
+                <!-- Mostrar los equipos encontrados -->
                 <?php foreach ($resultados as $equipo): ?>
 
                     <tr>

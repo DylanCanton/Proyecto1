@@ -1,10 +1,13 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al administrador
 exigirRol("Administrador");
 
+// Consultar los roles disponibles
 $sql = "SELECT id, nombre FROM roles ORDER BY nombre";
 
 $stmt = $conexion->prepare($sql);
@@ -19,6 +22,7 @@ $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Registrar usuario - SIGEL</title>
+    <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
 
@@ -28,8 +32,10 @@ $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <br><br>
 
+    <!-- Formulario de registro -->
     <form action="../actions/guardarUsuario.php" method="POST">
 
+        <!-- Token de seguridad -->
         <input type="hidden" name="csrf_token"
                value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
@@ -53,6 +59,7 @@ $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             <option value="">Seleccione un rol</option>
 
+            <!-- Mostrar los roles de MySQL -->
             <?php foreach ($roles as $rol): ?>
 
                 <option value="<?php echo (int) $rol["id"]; ?>">
@@ -71,4 +78,3 @@ $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 </body>
 </html>
-

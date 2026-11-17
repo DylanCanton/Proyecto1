@@ -1,10 +1,13 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir acceso al administrador y operador
 exigirRol(["Administrador", "Operador"]);
 
+// Obtener y validar el ID del equipo
 $id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
 
 if (!$id || $id <= 0) {
@@ -12,6 +15,7 @@ if (!$id || $id <= 0) {
     exit("Equipo no encontrado.");
 }
 
+// Consultar los datos del equipo
 $sql = "SELECT equipos.id, equipos.codigo, equipos.nombre,
                equipos.estado, categorias.nombre AS categoria
         FROM equipos
@@ -24,13 +28,16 @@ $stmt->execute(["id" => $id]);
 
 $equipo = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// Verificar que el equipo exista
 if (!$equipo) {
     http_response_code(404);
     exit("Equipo no encontrado.");
 }
 
+// Agregar el equipo a los recientes
 $recientes = [$id];
 
+// Recuperar los equipos guardados en la cookie
 $guardados = $_COOKIE["sigel_recientes"] ?? "";
 
 if (is_string($guardados)) {
@@ -39,10 +46,12 @@ if (is_string($guardados)) {
 
     foreach ($lista as $valor) {
 
+        // Validar los identificadores guardados
         if (ctype_digit($valor)) {
 
             $numero = (int) $valor;
 
+            // Evitar equipos repetidos
             if (
                 $numero > 0 &&
                 $numero !== $id &&
@@ -52,12 +61,14 @@ if (is_string($guardados)) {
             }
         }
 
+        // Guardar un maximo de 5 equipos
         if (count($recientes) >= 5) {
             break;
         }
     }
 }
 
+// Guardar los equipos recientes en una cookie
 setcookie("sigel_recientes", implode(",", $recientes), [
     "expires" => time() + (30 * 24 * 60 * 60),
     "path" => "/",
@@ -78,6 +89,7 @@ setcookie("sigel_recientes", implode(",", $recientes), [
 
     <h2>Informacion del equipo</h2>
 
+    <!-- Mostrar los datos del equipo -->
     <p><strong>Codigo:</strong>
         <?php echo htmlspecialchars($equipo["codigo"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>
     </p>

@@ -1,15 +1,19 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al operador
 exigirRol("Operador");
 
+// Verificar el metodo POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: ../pages/crearPrestamo.php");
     exit;
 }
 
+// Validar el token CSRF
 $token = $_POST["csrf_token"] ?? "";
 
 if (
@@ -21,13 +25,14 @@ if (
     exit("Solicitud no valida.");
 }
 
+// Recibir los datos del formulario
 $usuario_id = filter_input(INPUT_POST, "usuario_id", FILTER_VALIDATE_INT);
 
 $fecha_inicio = $_POST["fecha_inicio"] ?? "";
 $fecha_fin = $_POST["fecha_fin"] ?? "";
 $equipos = $_POST["equipos"] ?? [];
 
-
+// Validar los datos recibidos
 if (
     !$usuario_id ||
     $usuario_id <= 0 ||
@@ -41,7 +46,7 @@ if (
     exit;
 }
 
-
+// Identificar el formato de las fechas
 $formatoInicio = strlen($fecha_inicio) === 19
     ? "Y-m-d\TH:i:s"
     : "Y-m-d\TH:i";
@@ -50,9 +55,11 @@ $formatoFin = strlen($fecha_fin) === 19
     ? "Y-m-d\TH:i:s"
     : "Y-m-d\TH:i";
 
+// Convertir las fechas recibidas
 $inicio = DateTimeImmutable::createFromFormat("!" . $formatoInicio, $fecha_inicio);
 $fin = DateTimeImmutable::createFromFormat("!" . $formatoFin, $fecha_fin);
 
+// Comprobar que las fechas sean validas
 if (
     !$inicio ||
     !$fin ||
@@ -64,9 +71,10 @@ if (
     exit;
 }
 
-
+// Establecer el limite de 5 dias
 $maximoDias = 5;
 
+// Calcular la duracion del prestamo
 $duracion = $fin->getTimestamp() - $inicio->getTimestamp();
 
 if ($duracion > $maximoDias * 24 * 60 * 60) {
@@ -74,11 +82,12 @@ if ($duracion > $maximoDias * 24 * 60 * 60) {
     exit;
 }
 
-
+// Preparar los IDs de los equipos
 $equiposIds = [];
 
 foreach ($equipos as $valor) {
 
+    // Validar cada identificador
     if (!is_string($valor) && !is_int($valor)) {
         header("Location: ../pages/crearPrestamo.php?error=datos");
         exit;
@@ -94,21 +103,25 @@ foreach ($equipos as $valor) {
     $equiposIds[] = $id;
 }
 
+// Evitar equipos repetidos
 if (count($equiposIds) !== count(array_unique($equiposIds))) {
     header("Location: ../pages/crearPrestamo.php?error=datos");
     exit;
 }
 
+// Ordenar los IDs de los equipos
 sort($equiposIds, SORT_NUMERIC);
 
+// Preparar las fechas para MySQL
 $fechaInicioSQL = $inicio->format("Y-m-d H:i:s");
 $fechaFinSQL = $fin->format("Y-m-d H:i:s");
 
-
 try {
 
+    // Iniciar una transaccion
     $conexion->beginTransaction();
 
+    // Consultar el limite de prestamos activos
     $sql = "SELECT valor
             FROM configuracion
             WHERE clave = 'max_prestamos_activos'
@@ -123,6 +136,7 @@ try {
         throw new DomainException("configuracion");
     }
 
+    // Verificar que el usuario este activo
     $sql = "SELECT id
             FROM usuarios
             WHERE id = :id AND activo = 1
@@ -135,6 +149,7 @@ try {
         throw new DomainException("usuario");
     }
 
+    // Contar los prestamos activos del usuario
     $sql = "SELECT COUNT(*)
             FROM prestamos
             WHERE usuario_id = :usuario_id
@@ -145,11 +160,12 @@ try {
 
     $activos = (int) $stmt->fetchColumn();
 
+    // Verificar el limite de prestamos
     if ($activos >= (int) $limite) {
         throw new DomainException("limite");
     }
 
-    
+    // Preparar la consulta de equipos disponibles
     $sql = "SELECT id
             FROM equipos
             WHERE id = :id
@@ -159,6 +175,7 @@ try {
 
     $stmtEquipo = $conexion->prepare($sql);
 
+    // Preparar la consulta de fechas ocupadas
     $sql = "SELECT prestamos.id
             FROM prestamos
             INNER JOIN prestamo_detalle
@@ -172,8 +189,10 @@ try {
 
     $stmtOcupado = $conexion->prepare($sql);
 
+    // Verificar cada equipo seleccionado
     foreach ($equiposIds as $equipo_id) {
 
+        // Comprobar que el equipo este disponible
         $stmtEquipo->execute([
             "id" => $equipo_id
         ]);
@@ -182,6 +201,7 @@ try {
             throw new DomainException("equipo");
         }
 
+        // Comprobar que no tenga otro prestamo en esas fechas
         $stmtOcupado->execute([
             "equipo_id" => $equipo_id,
             "fecha_inicio" => $fechaInicioSQL,
@@ -193,7 +213,7 @@ try {
         }
     }
 
-
+    // Registrar el prestamo en MySQL
     $sql = "INSERT INTO prestamos
             (usuario_id, operador_id, fecha_inicio, fecha_fin, estado)
             VALUES
@@ -208,14 +228,17 @@ try {
         "fecha_fin" => $fechaFinSQL
     ]);
 
+    // Obtener el ID del nuevo prestamo
     $prestamo_id = (int) $conexion->lastInsertId();
 
+    // Preparar el registro de los equipos prestados
     $sql = "INSERT INTO prestamo_detalle
             (prestamo_id, equipo_id)
             VALUES (:prestamo_id, :equipo_id)";
 
     $stmt = $conexion->prepare($sql);
 
+    // Asociar los equipos con el prestamo
     foreach ($equiposIds as $equipo_id) {
 
         $stmt->execute([
@@ -224,14 +247,15 @@ try {
         ]);
     }
 
+    // Confirmar los cambios en MySQL
     $conexion->commit();
 
     header("Location: ../pages/crearPrestamo.php?ok=1");
     exit;
 
-
 } catch (DomainException $e) {
 
+    // Deshacer los cambios si falla una validacion
     if ($conexion->inTransaction()) {
         $conexion->rollBack();
     }
@@ -241,10 +265,12 @@ try {
 
 } catch (Throwable $e) {
 
+    // Deshacer los cambios si ocurre otro error
     if ($conexion->inTransaction()) {
         $conexion->rollBack();
     }
 
+    // Registrar el error en el servidor
     error_log($e->getMessage());
 
     header("Location: ../pages/crearPrestamo.php?error=guardar");

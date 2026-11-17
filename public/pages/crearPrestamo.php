@@ -1,11 +1,13 @@
 
-
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al operador
 exigirRol("Operador");
 
+// Consultar los usuarios activos
 $sql = "SELECT id, nombre, correo
         FROM usuarios
         WHERE activo = 1
@@ -16,6 +18,7 @@ $stmt->execute();
 
 $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Consultar los equipos disponibles
 $sql = "SELECT id, codigo, nombre
         FROM equipos
         WHERE eliminado_en IS NULL
@@ -34,14 +37,15 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Registrar prestamo - SIGEL</title>
+    <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
 
     <h2>Registrar prestamo</h2>
 
-    
 <?php
 
+// Definir los mensajes de error
 $mensajes = [
     "datos" => "Revise los datos ingresados.",
     "fechas" => "Las fechas del prestamo no son validas.",
@@ -54,25 +58,29 @@ $mensajes = [
     "duracion" => "El prestamo no puede superar los 5 dias."
 ];
 
+// Obtener el error enviado por la URL
 $error = $_GET["error"] ?? "";
 
+// Mostrar el mensaje correspondiente
 if (is_string($error) && isset($mensajes[$error])) {
     echo "<p>" . htmlspecialchars($mensajes[$error], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</p>";
 }
 
+// Mostrar mensaje de registro exitoso
 if (($_GET["ok"] ?? "") === "1") {
     echo "<p>Prestamo registrado correctamente.</p>";
 }
 
 ?>
 
-
     <a href="../panel.php">Volver al panel</a>
 
     <br><br>
 
+    <!-- Formulario para registrar prestamos -->
     <form action="../actions/guardarPrestamo.php" method="POST">
 
+        <!-- Token de seguridad CSRF -->
         <input type="hidden" name="csrf_token"
                value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
@@ -81,6 +89,7 @@ if (($_GET["ok"] ?? "") === "1") {
         <select name="usuario_id" required>
             <option value="">Seleccione un usuario</option>
 
+            <!-- Mostrar los usuarios activos -->
             <?php foreach ($usuarios as $usuario): ?>
 
                 <option value="<?php echo (int) $usuario["id"]; ?>">
@@ -93,6 +102,7 @@ if (($_GET["ok"] ?? "") === "1") {
 
         <br><br>
 
+        <!-- Seleccionar las fechas del prestamo -->
         <label>Fecha de inicio:</label>
         <input type="datetime-local" name="fecha_inicio" step="1" required>
 
@@ -105,12 +115,14 @@ if (($_GET["ok"] ?? "") === "1") {
 
         <h3>Seleccionar equipos</h3>
 
+        <!-- Comprobar si existen equipos disponibles -->
         <?php if (empty($equipos)): ?>
 
             <p>No hay equipos disponibles.</p>
 
         <?php else: ?>
 
+            <!-- Mostrar los equipos para seleccionar -->
             <?php foreach ($equipos as $equipo): ?>
 
                 <label>
@@ -128,6 +140,7 @@ if (($_GET["ok"] ?? "") === "1") {
 
         <br>
 
+        <!-- Enviar los datos del prestamo -->
         <button type="submit" <?php if (empty($equipos)) echo "disabled"; ?>>
             Registrar prestamo
         </button>

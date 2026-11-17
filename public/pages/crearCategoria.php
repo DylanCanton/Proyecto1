@@ -1,8 +1,10 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al administrador
 exigirRol("Administrador");
 
 ?>
@@ -12,19 +14,21 @@ exigirRol("Administrador");
 <head>
     <meta charset="UTF-8">
     <title>Crear Categoria - SIGEL</title>
+    <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
 
     <h2>Registrar nueva categoria</h2>
 
-    
+    <!-- Mostrar un mensaje si ocurre un error -->
     <?php if (isset($_GET["error"])): ?>
         <p>No se pudo guardar la categoria. Verifique los datos o utilice otro nombre.</p>
     <?php endif; ?>
 
-
+    <!-- Formulario para registrar categorias -->
     <form action="../actions/guardarCategoria.php" method="POST">
 
+        <!-- Token de seguridad CSRF -->
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
         <label>Nombre:</label>

@@ -1,6 +1,7 @@
 
 <?php
 
+// Comprueba si existe la cookie Recordarme
 if (
     !empty($_COOKIE["sigel_recordarme"]) &&
     is_string($_COOKIE["sigel_recordarme"])
@@ -9,8 +10,10 @@ if (
     $cookie = $_COOKIE["sigel_recordarme"];
     $tokenValido = false;
 
+    // Valida el formato de la cookie
     if (preg_match('/^[a-f0-9]{18}:[a-f0-9]{64}$/', $cookie)) {
 
+        // Separa el selector y el validador
         $partes = explode(":", $cookie);
 
         $selector = $partes[0];
@@ -18,6 +21,7 @@ if (
 
         require_once __DIR__ . "/../config/conexion.php";
 
+        // Busca el token y el usuario en MySQL
         $sql = "SELECT
                     t.id AS token_id,
                     t.validador_hash,
@@ -43,6 +47,7 @@ if (
 
         $datos = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // Comprueba que el token sea valido
         if (
             $datos &&
             strtotime($datos["expira_en"]) > time() &&
@@ -52,11 +57,13 @@ if (
             )
         ) {
 
+            // Crea nuevos valores para el token
             $nuevoSelector = bin2hex(random_bytes(9));
             $nuevoValidador = bin2hex(random_bytes(32));
 
             $expiracion = time() + (14 * 24 * 60 * 60);
 
+            // Actualiza el token en MySQL
             $sqlActualizar = "UPDATE auth_tokens
                               SET selector = :nuevo_selector,
                                   validador_hash = :nuevo_hash,
@@ -76,6 +83,7 @@ if (
 
             if ($stmtActualizar->rowCount() === 1) {
 
+                // Recupera la sesion del usuario
                 session_regenerate_id(true);
 
                 $_SESSION["usuario_id"] = $datos["usuario_id"];
@@ -84,6 +92,7 @@ if (
                 $_SESSION["ultimo_acceso"] = time();
                 $_SESSION["csrf_token"] = bin2hex(random_bytes(32));
 
+                // Guardar la nueva cookie
                 setcookie("sigel_recordarme", $nuevoSelector . ":" . $nuevoValidador, [
                     "expires" => $expiracion,
                     "path" => "/",
@@ -97,6 +106,7 @@ if (
         }
     }
 
+    // Elimina la cookie si no es valida
     if (!$tokenValido) {
 
         setcookie("sigel_recordarme", "", [

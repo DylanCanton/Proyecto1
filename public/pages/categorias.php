@@ -1,10 +1,13 @@
 
 <?php
 
+// Cargar la autenticacion
 require_once __DIR__ . "/../../app/includes/auth.php";
 
+// Permitir solo al administrador
 exigirRol("Administrador");
 
+// Obtener el texto de busqueda
 $buscar = $_GET["buscar"] ?? "";
 
 if (!is_string($buscar)) {
@@ -19,11 +22,12 @@ if (strlen($buscar) > 100) {
 
 $texto = "%" . $buscar . "%";
 
-
+// Configurar los registros por pagina
 $opciones = [5, 10, 20];
 
 $porPagina = 10;
 
+// Guardar la preferencia en una cookie
 if (isset($_GET["porPagina"])) {
 
     $valor = filter_input(INPUT_GET, "porPagina", FILTER_VALIDATE_INT);
@@ -43,6 +47,7 @@ if (isset($_GET["porPagina"])) {
 
 } elseif (isset($_COOKIE["sigel_categorias"])) {
 
+    // Recuperar la preferencia guardada
     $valor = filter_var($_COOKIE["sigel_categorias"], FILTER_VALIDATE_INT);
 
     if ($valor !== false && in_array($valor, $opciones, true)) {
@@ -50,7 +55,7 @@ if (isset($_GET["porPagina"])) {
     }
 }
 
-
+// Contar las categorias encontradas
 $sql = "SELECT COUNT(*) FROM categorias
         WHERE eliminado = 0
         AND (nombre LIKE :nombre OR descripcion LIKE :descripcion)";
@@ -64,8 +69,10 @@ $stmt->execute([
 
 $totalRegistros = (int) $stmt->fetchColumn();
 
+// Calcular el total de paginas
 $totalPaginas = max(1, (int) ceil($totalRegistros / $porPagina));
 
+// Validar la pagina actual
 $pagina = filter_input(INPUT_GET, "pagina", FILTER_VALIDATE_INT);
 
 if (!$pagina || $pagina < 1) {
@@ -78,6 +85,7 @@ if ($pagina > $totalPaginas) {
 
 $inicio = ($pagina - 1) * $porPagina;
 
+// Consultar las categorias en MySQL
 $sql = "SELECT id, nombre, descripcion
         FROM categorias
         WHERE eliminado = 0
@@ -103,6 +111,7 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Categorias - SIGEL</title>
+    <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
 
@@ -116,6 +125,7 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <br><br>
 
+    <!-- Formulario de busqueda -->
     <form action="categorias.php" method="GET">
 
         <input type="text" name="buscar" maxlength="100"
@@ -134,11 +144,11 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <option value="20" <?php if ($porPagina == 20) echo "selected"; ?>>20</option>
         </select>
 
-
     </form>
 
     <br><br>
 
+    <!-- Tabla de categorias -->
     <table border="1" cellpadding="8">
         <tr>
             <th>ID</th>
@@ -154,8 +164,11 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <td><?php echo htmlspecialchars($categoria["nombre"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></td>
             <td><?php echo htmlspecialchars($categoria["descripcion"] ?? "", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></td>
             <td>
+
+                <!-- Editar categoria -->
                 <a href="editarCategoria.php?id=<?php echo (int) $categoria["id"]; ?>">Editar</a>
 
+                <!-- Eliminar categoria -->
                 <form action="../actions/eliminarCategoria.php" method="POST">
 
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
@@ -174,6 +187,7 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <br>
 
+    <!-- Navegacion entre paginas -->
     <?php if ($totalPaginas > 1): ?>
 
         <p>Pagina <?php echo $pagina; ?> de <?php echo $totalPaginas; ?></p>
