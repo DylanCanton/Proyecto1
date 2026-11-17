@@ -41,20 +41,39 @@ if (
     exit;
 }
 
-$inicio = DateTimeImmutable::createFromFormat("!Y-m-d\TH:i", $fecha_inicio);
-$fin = DateTimeImmutable::createFromFormat("!Y-m-d\TH:i", $fecha_fin);
 
+$formatoInicio = strlen($fecha_inicio) === 19
+    ? "Y-m-d\TH:i:s"
+    : "Y-m-d\TH:i";
+
+$formatoFin = strlen($fecha_fin) === 19
+    ? "Y-m-d\TH:i:s"
+    : "Y-m-d\TH:i";
+
+$inicio = DateTimeImmutable::createFromFormat("!" . $formatoInicio, $fecha_inicio);
+$fin = DateTimeImmutable::createFromFormat("!" . $formatoFin, $fecha_fin);
 
 if (
     !$inicio ||
     !$fin ||
-    $inicio->format("Y-m-d\TH:i") !== $fecha_inicio ||
-    $fin->format("Y-m-d\TH:i") !== $fecha_fin ||
+    $inicio->format($formatoInicio) !== $fecha_inicio ||
+    $fin->format($formatoFin) !== $fecha_fin ||
     $fin <= $inicio
 ) {
     header("Location: ../pages/crearPrestamo.php?error=fechas");
     exit;
 }
+
+
+$maximoDias = 5;
+
+$duracion = $fin->getTimestamp() - $inicio->getTimestamp();
+
+if ($duracion > $maximoDias * 24 * 60 * 60) {
+    header("Location: ../pages/crearPrestamo.php?error=duracion");
+    exit;
+}
+
 
 $equiposIds = [];
 

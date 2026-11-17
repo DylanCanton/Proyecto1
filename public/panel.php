@@ -60,21 +60,34 @@ if (!$usuario) {
             <a href="pages/crearEquipo.php">Registrar equipo</a>
         </p>
 
+        <p>
+            <a href="pages/reporteEquipos.php">Reportes de equipos</a>
+        </p>
+
     <?php endif; ?>
 
     <p>
         <a href="pages/equipos.php">Consultar equipos</a>
     </p>
 
-    <p>
-        <a href="pages/crearPrestamo.php">Registrar Prestamo</a>
-    </p>
+    <?php if ($usuario["rol"] === "Operador"): ?>
+
+        <p>
+            <a href="pages/crearPrestamo.php">Registrar prestamo</a>
+        </p>
+
+        <p>
+            <a href="pages/prestamos.php">Consultar prestamos</a>
+        </p>
+
+    <?php endif; ?>
 
     <form action="actions/logout.php" method="POST">
 
-        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+        <input type="hidden" name="csrf_token"
+            value="<?php echo htmlspecialchars($_SESSION["csrf_token"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
 
-        <button type="submit">Cerrar sesión</button>
+        <button type="submit">Cerrar sesion</button>
 
     </form>
 

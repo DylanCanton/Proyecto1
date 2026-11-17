@@ -50,7 +50,8 @@ $mensajes = [
     "limite" => "El usuario alcanzo el limite de prestamos activos.",
     "equipo" => "Uno de los equipos no esta disponible.",
     "ocupado" => "Uno de los equipos ya esta reservado en esas fechas.",
-    "guardar" => "Ocurrio un error al guardar el prestamo."
+    "guardar" => "Ocurrio un error al guardar el prestamo.",
+    "duracion" => "El prestamo no puede superar los 5 dias."
 ];
 
 $error = $_GET["error"] ?? "";
@@ -93,12 +94,12 @@ if (($_GET["ok"] ?? "") === "1") {
         <br><br>
 
         <label>Fecha de inicio:</label>
-        <input type="datetime-local" name="fecha_inicio" required>
+        <input type="datetime-local" name="fecha_inicio" step="1" required>
 
         <br><br>
 
         <label>Fecha de finalizacion:</label>
-        <input type="datetime-local" name="fecha_fin" required>
+        <input type="datetime-local" name="fecha_fin" step="1" required>
 
         <br><br>
 
